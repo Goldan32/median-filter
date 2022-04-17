@@ -1,0 +1,12 @@
+# This gitignore is set up as a whitelist, talk to me before adding anything to it.
+*
+!*/
+
+# track this file
+!.gitignore
+
+# whitelist everything listed here
+!src/*
+!con/*
+!README.txt
+!generate_project.tcl
