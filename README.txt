@@ -4,8 +4,8 @@ Folder structure
 
 median-filter/
     generate_project.tcl   - TCL script created by Vivado.        Checked in.
-    src/                   - Your Verilog (or VHDL) source code.  All checked in.
-    con/                   - Your constraint files.               All checked in.
+    sources/               - Your Verilog (or VHDL) source code.  All checked in.
+    constraints/           - Your constraint files.               All checked in.
     project_1/             - Vivado project.                      Nothing here is checked in.
 
 

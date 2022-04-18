@@ -6,7 +6,7 @@
 !.gitignore
 
 # whitelist everything listed here
-!src/*
-!con/*
-!README.txt
+!sources/*
+!constraints/*
+!./README.txt
 !generate_project.tcl
