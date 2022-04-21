@@ -10,3 +10,4 @@
 !constraints/*
 !./README.txt
 !generate_project.tcl
+!testbenches/*
