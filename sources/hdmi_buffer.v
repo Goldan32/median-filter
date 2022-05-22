@@ -34,7 +34,6 @@ module hdmi_buffer(
     output [25*8-1:0] kernel_red,
     output [25*8-1:0] kernel_green,
     output [25*8-1:0] kernel_blue,
-    output       kernel_valid
     );
     
  // 1. HSync alapj�n felbont�st mond  ---- K�sz, addr ez alapj�n van.
@@ -46,86 +45,45 @@ module hdmi_buffer(
  
  // Get one pixel from RX
  reg [23:0] pixel;
- reg [2:0] fill_shr_cntr;
- reg shr_filled;
  
  always @ (posedge clk)
  begin
     if(rst || rx_vs)
     begin
         pixel <= 0;
-        fill_shr_cntr <= 0;
-        shr_filled <= 0;
     end     
     if(rx_dv)
     begin
         pixel <= {rx_red,rx_green,rx_blue};
-        fill_shr_cntr <= fill_shr_cntr + 1;
-        if(fill_shr_cntr == 4)
-        begin
-            shr_filled <= 1;
-        end
     end
          
  end
  
 
- // Determine the length of one line
- reg [11:0] width;
- reg [11:0] width_cntr;
+wire [11:0] addr;
+reg [11:0] width;
  
- always @ (posedge clk)
- begin
-    if(rst || rx_vs)
-    begin
-        width <= 0;
-        width_cntr <= 0;
-    end
-    else if(rx_hs)
-    begin
-        width <= width_cntr;
-        width_cntr <= 0;
-    end
-    else
-        width_cntr <= width_cntr + 1;
- end
- 
- // Address counter
- reg [10:0] addr_reg_wr;
- reg [2:0] row_cntr;
- wire [10:0] addr_reg_rd;
- 
- always @ (posedge  clk)
- begin
-    if(rst || rx_vs)
-    begin
-        addr_reg_wr <= 0;
-    end
-    else if(addr_reg_wr == width)
-    begin
-        addr_reg_wr <= 0;
-        row_cntr <= row_cntr + 1;
-    end
-    else
-    begin
-    addr_reg_wr <= addr_reg_wr + 1;
-    end
- end
- 
- assign kernel_valid  = (row_cntr == 4);
-// �tgondolni, vagy t�r�lni, ha j�, ha mindkett? ugyanaz
-assign addr_reg_rd = addr_reg_wr;
+addr_ctrl #(
+    .ADDR_W(11)
+)
+addr_module(
+    .clk(clk),
+    .rst(rst),
+    .vsync(rx_vs),
+    .hsync(rx_hs),
+    .addr(addr),
+    .width(width)
+ );
 
 wire [23:0] shr_dout [4:0][4:0];
+wire [23:0] bram_dout [3:0];
+wire data_valid;
+assign data_valid = rx_dv;
 
-wire [23:0] bram_dout_0;
-wire [23:0] bram_dout_1;
-wire [23:0] bram_dout_2;
-wire [23:0] bram_dout_3;
- 
 genvar k;
 generate
-    for (k = 0; k < 5; k = k + 1) begin: inst
+    for (k = 0; k < 5; k = k + 1) begin 
+    if(k==0) begin: inst
         px_shr(
             .clk(clk),
             .rst(rst),
@@ -137,7 +95,61 @@ generate
             .data4(shr_dout[k][4])
         );
     end
+    else begin: inst
+        px_shr(
+            .clk(clk),
+            .rst(rst),
+            .din(bram_dout[k-1]),
+            .data0(shr_dout[k][0]),
+            .data1(shr_dout[k][1]),
+            .data2(shr_dout[k][2]),
+            .data3(shr_dout[k][3]),
+            .data4(shr_dout[k][4])
+        );
+    end
+    end
 endgenerate
+
+genvar q;
+generate
+    for (q = 0; q < 4; q = q + 1) begin
+    if(q==0) begin: inst
+        bram#(
+            .DATA_W(24),
+            .ADDR_W(11)
+        )(
+            .clk_a(clk),
+            .we_a(data_valid != 0),
+            .addr_a(addr),
+            .din_a(pixel),
+            .dout(),
+            .clk_b(clk),
+            .we_b(0'b0),
+            .addr_b(addr),
+            .din_b(),
+            .dout_b(bram_dout[k])
+        );
+    end
+    else begin: inst
+        bram#(
+            .DATA_W(24),
+            .ADDR_W(11)
+        )(
+            .clk_a(clk),
+            .we_a((data_valid != 0)),
+            .addr_a(addr),
+            .din_a(shr_dout[k][0]),
+            .dout(),
+            .clk_b(clk),
+            .we_b(0'b0),
+            .addr_b(addr),
+            .din_b(),
+            .dout_b(bram_dout[k])
+        );
+    end
+    end
+endgenerate
+
 
 genvar jj, ii;
 generate
@@ -149,76 +161,5 @@ generate
         end
     end
 endgenerate
- 
- // Amikor az els? shift regiszter felt�lt?dik adattal, akkor kezd?dik a BRAM-ba �r�s
- assign data_valid = rx_dv && shr_filled;
- bram #(
-    .DATA_W(24),
-    .ADDR_W(11)
- )
- buffer_ram_0(
-    .clk_a(clk),
-    .we_a((data_valid  != 0)),
-    .addr_a(addr_reg_wr),
-    .din_a(shr_dout_0),
-    .dout(),
-    .clk_b(clk),
-    .we_b((data_valid  != 0)),
-    .addr_b(addr_reg_rd),
-    .din_b(),
-    .dout_b(bram_dout_0)
- );
- 
-  bram #(
-    .DATA_W(24),
-    .ADDR_W(11)
- )
- buffer_ram_1(
-    .clk_a(clk),
-    .we_a((data_valid  != 0)),
-    .addr_a(addr_reg_wr),
-    .din_a(shr_dout_1),
-    .dout(),
-    .clk_b(clk),
-    .we_b((data_valid  != 0)),
-    .addr_b(addr_reg_rd),
-    .din_b(),
-    .dout_b(bram_dout_1)
- );
- 
-  bram #(
-    .DATA_W(24),
-    .ADDR_W(11)
- )
- buffer_ram_2(
-    .clk_a(clk),
-    .we_a((data_valid  != 0)),
-    .addr_a(addr_reg_wr),
-    .din_a(shr_dout_2),
-    .dout(),
-    .clk_b(clk),
-    .we_b((data_valid  != 0)),
-    .addr_b(addr_reg_rd),
-    .din_b(),
-    .dout_b(bram_dout_2)
- );
- 
-  bram #(
-    .DATA_W(24),
-    .ADDR_W(11)
- )
- buffer_ram_3(
-    .clk_a(clk),
-    .we_a((data_valid  != 0)),
-    .addr_a(addr_reg_wr),
-    .din_a(shr_dout_3),
-    .dout(),
-    .clk_b(clk),
-    .we_b((data_valid  != 0)),
-    .addr_b(addr_reg_rd),
-    .din_b(),
-    .dout_b(bram_dout_3)
- );
-
 
 endmodule
