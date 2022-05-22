@@ -31,20 +31,18 @@ module hdmi_buffer(
     input       rx_hs,
     input       rx_vs,
     
-    output [4:0] kernel_1_row [24:0],
-    output [4:0] kernel_2_row [24:0],
-    output [4:0] kernel_3_row [24:0],
-    output [4:0] kernel_4_row [24:0],
-    output [4:0] kernel_5_row [24:0],
+    output [25*8-1:0] kernel_red,
+    output [25*8-1:0] kernel_green,
+    output [25*8-1:0] kernel_blue,
     output       kernel_valid
     );
     
- // 1. HSync alapján felbontást mond  ---- Kész, addr ez alapján van.
- // 2. Számláló, ami megmondja, hogy mikor van az összes bramban adat. ----- Kernel valid. Ha 4x eljutottunk akép szélére, azt jelenti, hogy van 4 sor + 5 pixel
- // 3. VSync alapján megmondja, hogy hány sor van. ----- Ez lehet felesleges. Ha vsync jön, azt jelenti, hogy vége a képnek. Ekkor a valid jeleket nullázni kell. Kérdés, hogy az ablak többi részével mi legyen.
- // 4. Address-t számol. ---- Ez kész. Most a READ és WRITE addr megegyezik, remélhet?leg nem akadnak össze. (Összeakadhatnak?)
- // 5. Bramok egymásba töltögetik egymást. ---- Ez szerintem kész, shift regisztereken keresztül megy beléjük az adat.
- // 6. Kép szélénél az elejére ugrás, vagy beleprésel?dik. 
+ // 1. HSync alapjï¿½n felbontï¿½st mond  ---- Kï¿½sz, addr ez alapjï¿½n van.
+ // 2. Szï¿½mlï¿½lï¿½, ami megmondja, hogy mikor van az ï¿½sszes bramban adat. ----- Kernel valid. Ha 4x eljutottunk akï¿½p szï¿½lï¿½re, azt jelenti, hogy van 4 sor + 5 pixel
+ // 3. VSync alapjï¿½n megmondja, hogy hï¿½ny sor van. ----- Ez lehet felesleges. Ha vsync jï¿½n, azt jelenti, hogy vï¿½ge a kï¿½pnek. Ekkor a valid jeleket nullï¿½zni kell. Kï¿½rdï¿½s, hogy az ablak tï¿½bbi rï¿½szï¿½vel mi legyen.
+ // 4. Address-t szï¿½mol. ---- Ez kï¿½sz. Most a READ ï¿½s WRITE addr megegyezik, remï¿½lhet?leg nem akadnak ï¿½ssze. (ï¿½sszeakadhatnak?)
+ // 5. Bramok egymï¿½sba tï¿½ltï¿½getik egymï¿½st. ---- Ez szerintem kï¿½sz, shift regisztereken keresztï¿½l megy belï¿½jï¿½k az adat.
+ // 6. Kï¿½p szï¿½lï¿½nï¿½l az elejï¿½re ugrï¿½s, vagy beleprï¿½sel?dik. 
  
  // Get one pixel from RX
  reg [23:0] pixel;
@@ -115,52 +113,44 @@ module hdmi_buffer(
  end
  
  assign kernel_valid  = (row_cntr == 4);
-// átgondolni, vagy törölni, ha jó, ha mindkett? ugyanaz
+// ï¿½tgondolni, vagy tï¿½rï¿½lni, ha jï¿½, ha mindkett? ugyanaz
 assign addr_reg_rd = addr_reg_wr;
- 
-wire [23:0] shr_dout_0;
-wire [23:0] shr_dout_1;
-wire [23:0] shr_dout_2;
-wire [23:0] shr_dout_3;
-wire [23:0] shr_dout_4;
+
+wire [23:0] shr_dout [4:0][4:0];
 
 wire [23:0] bram_dout_0;
 wire [23:0] bram_dout_1;
 wire [23:0] bram_dout_2;
 wire [23:0] bram_dout_3;
  
-px_shr shr_0(
-    .clk(clk),
-    .rst(rst),
-    .din(pixel),
-    .dout(shr_dout_0)
- );
-px_shr shr_1(
-    .clk(clk),
-    .rst(rst),
-    .din(bram_dout_0),
-    .dout(shr_dout_1)
- );
-px_shr shr_2(
-    .clk(clk),
-    .rst(rst),
-    .din(bram_dout_1),
-    .dout(shr_dout_2)
- );
-px_shr shr_3(
-    .clk(clk),
-    .rst(rst),
-    .din(bram_dout_2),
-    .dout(shr_dout_3)
- );
-px_shr shr_4(
-    .clk(clk),
-    .rst(rst),
-    .din(bram_dout_3),
-    .dout(shr_dout_4)
- );
+genvar k;
+generate
+    for (k = 0; k < 5; k = k + 1) begin: inst
+        px_shr(
+            .clk(clk),
+            .rst(rst),
+            .din(pixel),
+            .data0(shr_dout[k][0]),
+            .data1(shr_dout[k][1]),
+            .data2(shr_dout[k][2]),
+            .data3(shr_dout[k][3]),
+            .data4(shr_dout[k][4])
+        );
+    end
+endgenerate
+
+genvar jj, ii;
+generate
+    for (jj = 0; jj < 5; jj = jj + 1) begin
+        for (ii = 0; ii < 5; ii = ii + 1) begin
+            assign kernel_red  [(5*jj+ii)*8 + 7: (5*jj+ii)*8] = shr_dout[jj][ii][7:0];
+            assign kernel_green[(5*jj+ii)*8 + 7: (5*jj+ii)*8] = shr_dout[jj][ii][15:8];
+            assign kernel_blue [(5*jj+ii)*8 + 7: (5*jj+ii)*8] = shr_dout[jj][ii][23:16];
+        end
+    end
+endgenerate
  
- // Amikor az els? shift regiszter feltölt?dik adattal, akkor kezd?dik a BRAM-ba írás
+ // Amikor az els? shift regiszter feltï¿½lt?dik adattal, akkor kezd?dik a BRAM-ba ï¿½rï¿½s
  assign data_valid = rx_dv && shr_filled;
  bram #(
     .DATA_W(24),
@@ -230,10 +220,5 @@ px_shr shr_4(
     .dout_b(bram_dout_3)
  );
 
-assign kernel_1_row = shr_dout_4;
-assign kernel_2_row = shr_dout_3;
-assign kernel_3_row = shr_dout_2;
-assign kernel_4_row = shr_dout_1;
-assign kernel_5_row = shr_dout_0;
 
 endmodule
