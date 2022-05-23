@@ -60,8 +60,8 @@ module hdmi_buffer(
  end
  
 
-wire [11:0] addr;
-reg [11:0] width;
+wire [10:0] addr;
+wire [10:0] width;
  
 addr_ctrl #(
     .ADDR_W(11)
@@ -82,8 +82,8 @@ assign data_valid = rx_dv;
 
 genvar k;
 generate
-    for (k = 0; k < 5; k = k + 1) begin 
-    if(k==0) begin: inst
+    for (k = 0; k < 5; k = k + 1) begin: inst
+    if(k==0) begin
         px_shr(
             .clk(clk),
             .rst(rst),
@@ -95,7 +95,7 @@ generate
             .data4(shr_dout[k][4])
         );
     end
-    else begin: inst
+    else begin
         px_shr(
             .clk(clk),
             .rst(rst),
@@ -122,12 +122,12 @@ generate
             .we_a(data_valid != 0),
             .addr_a(addr),
             .din_a(pixel),
-            .dout(),
+            .dout_a(),
             .clk_b(clk),
-            .we_b(0'b0),
+            .we_b(1'b0),
             .addr_b(addr),
             .din_b(),
-            .dout_b(bram_dout[k])
+            .dout_b(bram_dout[q])
         );
     end
     else begin: inst
@@ -138,13 +138,13 @@ generate
             .clk_a(clk),
             .we_a((data_valid != 0)),
             .addr_a(addr),
-            .din_a(shr_dout[k][0]),
-            .dout(),
+            .din_a(shr_dout[q][0]),
+            .dout_a(),
             .clk_b(clk),
-            .we_b(0'b0),
+            .we_b(1'b0),
             .addr_b(addr),
             .din_b(),
-            .dout_b(bram_dout[k])
+            .dout_b(bram_dout[q])
         );
     end
     end
