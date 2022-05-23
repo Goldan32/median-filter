@@ -33,7 +33,7 @@ module hdmi_buffer(
     
     output [25*8-1:0] kernel_red,
     output [25*8-1:0] kernel_green,
-    output [25*8-1:0] kernel_blue,
+    output [25*8-1:0] kernel_blue
     );
     
  // 1. HSync alapj�n felbont�st mond  ---- K�sz, addr ez alapj�n van.
@@ -117,7 +117,7 @@ generate
         bram#(
             .DATA_W(24),
             .ADDR_W(11)
-        )(
+        )bram_module(
             .clk_a(clk),
             .we_a(data_valid != 0),
             .addr_a(addr),
@@ -134,7 +134,7 @@ generate
         bram#(
             .DATA_W(24),
             .ADDR_W(11)
-        )(
+        )bram_module(
             .clk_a(clk),
             .we_a((data_valid != 0)),
             .addr_a(addr),
