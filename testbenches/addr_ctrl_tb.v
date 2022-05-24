@@ -31,18 +31,20 @@ reg rx_vs = 0;
 reg rx_hs = 0;
 reg rst = 1;
 
+// First hsync, and the last vsynch is out of synch of clk
+
 initial begin
 #22 rst <= 0;
 #100 rx_hs <= 1;
-#5 rx_hs <= 0;
+#10 rx_hs <= 0;
 #100 rx_hs <= 1;
-#5 rx_hs <= 0;
+#10 rx_hs <= 0;
 #100 rx_hs <= 1;
-#5 rx_hs <= 0;
+#10 rx_hs <= 0;
 #100 rx_hs <= 1;
-#5 rx_vs <= 0;
-rx_vs <= 1;
-#5 rx_vs <= 0;
+#10 rx_hs <= 0;
+#100 rx_vs <= 1;
+#10 rx_vs <= 0;
 end
 
 addr_ctrl #(.ADDR_W(11)) uut_addr_ctrl(
@@ -53,9 +55,6 @@ addr_ctrl #(.ADDR_W(11)) uut_addr_ctrl(
     .addr(addr),
     .width(width)
 );
-
-
-
 
 
 endmodule
