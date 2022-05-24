@@ -1,203 +1,91 @@
 `timescale 1ns / 1ps
 //////////////////////////////////////////////////////////////////////////////////
-// Function:       Selects the median from p0 - p8
-// Pipeline delay: 4 clk cycles
+// Function:       Selects the median from 25 8 bit pixel values
+// Pipeline delay: x clk cycles
 //
-// Kernel:     p6 | p7 | p8
-//             p5 | p0 | p1
-//             p4 | p3 | p2
-//
-// With this nameing convention, the kernel can be expanded easily.
 // 
 //////////////////////////////////////////////////////////////////////////////////
 
-
-module calculate_median(
-    input  wire       clk,
-    //input  wire       rst,
-
-    input  wire [7:0] p0,
-    input  wire [7:0] p1,
-    input  wire [7:0] p2,
-    input  wire [7:0] p3,
-    input  wire [7:0] p4,
-    input  wire [7:0] p5,
-    input  wire [7:0] p6,
-    input  wire [7:0] p7,
-    input  wire [7:0] p8,
-    
-    output wire [7:0] median
-
+module calculate_median
+#(
+    parameter ELEMENT_NUM = 25, // Kernel size here
+    parameter DATA_WIDTH = 8   // 1 pixel is stored in 8 bits
+)
+(
+    input  wire                              clk,
+    input  wire [DATA_WIDTH*ELEMENT_NUM-1:0] pixels,
+    output wire [DATA_WIDTH-1:0]             median
 );
 
-// Registers for 3 pipeline phases
-// p0 is only used at the last stage
-reg [7:0] stage1_reg [7:0];
-reg [7:0] stage2_reg [7:0];
-reg [7:0] stage3_reg [7:0];
-reg [7:0] median_reg;
+// A full bitonic array would be this long
+localparam LOG_FULL_BITONIC_LENGTH = $clog2(ELEMENT_NUM);
+localparam FULL_BITONIC_LENGTH     = 2 ** LOG_FULL_BITONIC_LENGTH;
 
-wire [7:0] step1 [7:0];
-wire [7:0] step2 [7:0];
-wire [7:0] step3 [7:0];
-// Stages: Each stage performs 2 steps
-// Stage 1
+// Number of pipeline levels
+localparam COL_NUM = (((1 + LOG_FULL_BITONIC_LENGTH) * LOG_FULL_BITONIC_LENGTH)/2) + 1;
 
-assign step1[0] = (p1 < p2) ? p1 : p2;
-assign step1[1] = (p1 < p2) ? p2 : p1;
-assign step1[2] = (p3 < p4) ? p4 : p3;
-assign step1[3] = (p3 < p4) ? p3 : p4;
-assign step1[4] = (p5 < p6) ? p5 : p6;
-assign step1[5] = (p5 < p6) ? p6 : p5;
-assign step1[6] = (p7 < p8) ? p8 : p7;
-assign step1[7] = (p7 < p8) ? p7 : p8;
+// Storing all pixel values currently in the pipeline
+reg [DATA_WIDTH-1:0] bank [COL_NUM-1:0] [ELEMENT_NUM-1:0];
 
-always @ (posedge clk) begin
-    if (step1[0] < step1[2]) begin
-        stage1_reg[0] <= step1[0];
-        stage1_reg[2] <= step1[2];
-    end else begin
-        stage1_reg[0] <= step1[2];
-        stage1_reg[2] <= step1[0];
+// Sample the input wires into a register
+genvar ii;
+generate
+    for (ii = 0; ii < ELEMENT_NUM; ii = ii+1) begin
+        always @ (posedge clk) begin: gen_first_level
+            bank[0][ii] <= pixels[ii*DATA_WIDTH + DATA_WIDTH-1: ii*DATA_WIDTH];
+        end
     end
-    
-    if (step1[1] < step1[3]) begin
-        stage1_reg[1] <= step1[1];
-        stage1_reg[3] <= step1[3];
-    end else begin
-        stage1_reg[1] <= step1[3];
-        stage1_reg[3] <= step1[1];
-    end
-    
-    if (step1[4] < step1[6]) begin
-        stage1_reg[4] <= step1[6];
-        stage1_reg[6] <= step1[4];
-    end else begin
-        stage1_reg[4] <= step1[4];
-        stage1_reg[6] <= step1[6];
-    end
-    
-    if (step1[5] < step1[7]) begin
-        stage1_reg[5] <= step1[7];
-        stage1_reg[7] <= step1[5];
-    end else begin
-        stage1_reg[5] <= step1[5];
-        stage1_reg[7] <= step1[7];
-    end
+endgenerate
 
-end
 
-// Stage 2
-assign step2[0] = (stage1_reg[0] < stage1_reg[1]) ? stage1_reg[0] : stage1_reg[1];
-assign step2[1] = (stage1_reg[0] < stage1_reg[1]) ? stage1_reg[1] : stage1_reg[0];
-assign step2[2] = (stage1_reg[2] < stage1_reg[3]) ? stage1_reg[2] : stage1_reg[3];
-assign step2[3] = (stage1_reg[2] < stage1_reg[3]) ? stage1_reg[3] : stage1_reg[2];
-assign step2[4] = (stage1_reg[4] < stage1_reg[5]) ? stage1_reg[5] : stage1_reg[4];
-assign step2[5] = (stage1_reg[4] < stage1_reg[5]) ? stage1_reg[4] : stage1_reg[5];
-assign step2[6] = (stage1_reg[6] < stage1_reg[7]) ? stage1_reg[7] : stage1_reg[6];
-assign step2[7] = (stage1_reg[6] < stage1_reg[7]) ? stage1_reg[6] : stage1_reg[7];
+genvar i, k, l, j;
+generate
+    for (k = 2; k <= FULL_BITONIC_LENGTH; k = k*2) begin
+        localparam marker = $clog2(k);
+        for (j = k/2; j > 0; j = j/2) begin
+            localparam col = (((1 + (marker - 1)) * (marker - 1)) / 2) + (marker - $clog2(j));
+            for (i = 0; i < FULL_BITONIC_LENGTH; i = i + 1) begin
+                localparam l = (j == (k/2)) ? i^((2 ** marker) - 1) : i^j;
+                if (l > i) begin
+                    if (l < ELEMENT_NUM) begin
+                        always @ (posedge clk) begin: gen_b
+                            $display(l, i, col);
+                            if (bank[col-1][i] > bank[col-1][l]) begin
+                                bank[col][i] <= bank[col-1][l];
+                                bank[col][l] <= bank[col-1][i];
+                            end else begin
+                                bank[col][i] <= bank[col-1][i];
+                                bank[col][l] <= bank[col-1][l];
+                            end
+                        end
+                    end else begin
+                        always @ (posedge clk) begin: gen_remaining
+                            $display(i, l, col, 666);
+                            bank[col][i] <= bank[col-1][i];
+                        end
+                    end
+                end
+            end
+        end
+    end
+endgenerate
 
-always @ (posedge clk) begin
-    if (step2[0] < step2[4]) begin
-        stage2_reg[0] <= step2[0];
-        stage2_reg[4] <= step2[4];
-    end else begin
-        stage2_reg[0] <= step2[4];
-        stage2_reg[4] <= step2[0];
-    end
-    
-    if (step2[1] < step2[5]) begin
-        stage2_reg[1] <= step2[1];
-        stage2_reg[5] <= step2[5];
-    end else begin
-        stage2_reg[1] <= step2[5];
-        stage2_reg[5] <= step2[1];
-    end
-    
-    if (step2[2] < step2[6]) begin
-        stage2_reg[2] <= step2[2];
-        stage2_reg[6] <= step2[6];
-    end else begin
-        stage2_reg[2] <= step2[6];
-        stage2_reg[6] <= step2[2];
-    end
-    
-    if (step2[3] < step2[7]) begin
-        stage2_reg[3] <= step2[3];
-        stage2_reg[7] <= step2[7];
-    end else begin
-        stage2_reg[3] <= step2[7];
-        stage2_reg[7] <= step2[3];
-    end
-end
+reg [DATA_WIDTH-1:0] median_reg;
 
-// Stage3
-assign step3[0] = (stage2_reg[0] < stage2_reg[2]) ? stage2_reg[0] : stage2_reg[2];
-assign step3[2] = (stage2_reg[0] < stage2_reg[2]) ? stage2_reg[2] : stage2_reg[0];
-assign step3[1] = (stage2_reg[1] < stage2_reg[3]) ? stage2_reg[1] : stage2_reg[3];
-assign step3[3] = (stage2_reg[1] < stage2_reg[3]) ? stage2_reg[3] : stage2_reg[1];
-assign step3[4] = (stage2_reg[4] < stage2_reg[6]) ? stage2_reg[4] : stage2_reg[6];
-assign step3[6] = (stage2_reg[4] < stage2_reg[6]) ? stage2_reg[6] : stage2_reg[4];
-assign step3[5] = (stage2_reg[5] < stage2_reg[7]) ? stage2_reg[5] : stage2_reg[7];
-assign step3[7] = (stage2_reg[5] < stage2_reg[7]) ? stage2_reg[7] : stage2_reg[5];
-
-always @ (posedge clk) begin
-    if (step3[0] < step3[1]) begin
-        stage3_reg[0] <= step3[0];
-        stage3_reg[1] <= step3[1];
+generate
+    if (LOG_FULL_BITONIC_LENGTH[0]) begin
+        always @ (posedge clk) begin
+            median_reg <= bank[COL_NUM-1][ELEMENT_NUM/2];
+        end
     end else begin
-        stage3_reg[0] <= step3[1];
-        stage3_reg[1] <= step3[0];
+        always @ (posedge clk) begin
+            median_reg <= ((bank[COL_NUM-1][ELEMENT_NUM/2])
+                          + (bank[COL_NUM-1][ELEMENT_NUM/2 + 1]))
+                          >> 1;
+        end
     end
-    
-    if (step3[2] < step3[3]) begin
-        stage3_reg[2] <= step3[2];
-        stage3_reg[3] <= step3[3];
-    end else begin
-        stage3_reg[2] <= step3[3];
-        stage3_reg[3] <= step3[2];
-    end
-    
-    if (step3[4] < step3[5]) begin
-        stage3_reg[4] <= step3[4];
-        stage3_reg[5] <= step3[5];
-    end else begin
-        stage3_reg[4] <= step3[5];
-        stage3_reg[5] <= step3[4];
-    end
-    
-    if (step3[6] < step3[7]) begin
-        stage3_reg[6] <= step3[6];
-        stage3_reg[7] <= step3[7];
-    end else begin
-        stage3_reg[6] <= step3[7];
-        stage3_reg[7] <= step3[6];
-    end
-end
+endgenerate
 
-// Delay p0 parralell with pipeline
-reg [7:0] p0_shreg [2:0];
-integer i;
-
-always @ (posedge clk) begin
-    p0_shreg[0] <= p0;
-    for (i = 2; i > 0; i = i - 1) begin
-        p0_shreg[i] <= p0_shreg[i - 1];
-    end
-end
-
-// Selecting the median, p0 is taken into consideration
-always @ (posedge clk) begin
-    if (stage3_reg[3] > p0_shreg[2]) begin
-        median_reg <= stage3_reg[3];
-    end else if (stage3_reg[4] < p0_shreg[2]) begin
-        median_reg <= stage3_reg[4];
-    end else begin
-        median_reg <= p0_shreg[2];
-    end
-end
-
-// Set output
 assign median = median_reg;
 
 endmodule
