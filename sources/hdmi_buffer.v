@@ -130,7 +130,7 @@ generate
     end
     else begin: inst
         bram#(
-            .DATA_W(24),
+            .DATA_W(27),
             .ADDR_W(11)
         )bram_module(
             .clk_a(clk),
@@ -153,7 +153,7 @@ genvar jj, ii;
 generate
     for (jj = 0; jj < 5; jj = jj + 1) begin
         for (ii = 0; ii < 5; ii = ii + 1) begin
-            assign kernel_etc  [(5*jj+ii)*3 + 2: (5*jj+ii)*3] = shr_dout[jj][ii][26:17];
+            assign kernel_etc  [(5*jj+ii)*3 + 2: (5*jj+ii)*3] = shr_dout[jj][ii][26:24];
             assign kernel_red  [(5*jj+ii)*8 + 7: (5*jj+ii)*8] = shr_dout[jj][ii][23:16];
             assign kernel_green[(5*jj+ii)*8 + 7: (5*jj+ii)*8] = shr_dout[jj][ii][15:8]; 
             assign kernel_blue [(5*jj+ii)*8 + 7: (5*jj+ii)*8] = shr_dout[jj][ii][7:0];

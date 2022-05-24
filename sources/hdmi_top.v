@@ -154,8 +154,8 @@ wire [25*3-1:0] kernel_etc;
 wire [7:0] tx_red, tx_green, tx_blue;
 wire tx_dv, tx_hs, tx_vs;
 assign tx_dv    = rx_dv;
-assign tx_hs    = rx_hs;
-assign tx_vs    = rx_vs;
+//assign tx_hs    = rx_hs;
+//assign tx_vs    = rx_vs;
 //assign tx_red   = rx_red;
 //assign tx_red = kernel_red[25*8-1:25*8-8];
 //assign tx_green = rx_green;
@@ -228,4 +228,14 @@ calculate_median #(
     .median(tx_green)
 );
 
+median_delay median_delay_module(
+    .clk(clk100M),
+    .hs_in(kernel_etc[12*3+1]),
+    .vs_in(kernel_etc[12*3+2]),
+    .dv_in(kernel_etc[12*3+0]),
+    .vs_out(tx_vs),
+    .hs_out(tx_hs)//,
+    //.dv_out(tx_dv)
+    );
+    
 endmodule

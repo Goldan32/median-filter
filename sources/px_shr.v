@@ -35,7 +35,7 @@ reg [26:0] data_reg [4:0];
 
 always @ (posedge clk) begin
     if (rst) begin
-        data_reg[4] <= 24'd0;
+        data_reg[4] <= 27'd0;
     end else begin
         data_reg[4] <= din;
     end
