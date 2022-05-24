@@ -31,8 +31,6 @@ reg rx_vs = 0;
 reg rx_hs = 0;
 reg rst = 1;
 
-// First hsync, and the last vsynch is out of synch of clk
-
 initial begin
 #22 rst <= 0;
 #100 rx_hs <= 1;
