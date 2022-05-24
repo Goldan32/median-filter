@@ -32,11 +32,11 @@ module addr_ctrl#(
     );
 
 // Determine length of line
-reg [ADDR_W-1:0] width_reg; 
+reg [ADDR_W-1:0] width_reg = 2047; 
 reg [ADDR_W-1:0] width_cntr;
 always @(posedge clk) begin
     if(rst || vsync) begin
-        width_reg <= 0;
+        width_reg <= 2047;
         width_cntr <= 0;
     end
     else if(hsync) begin
@@ -57,7 +57,7 @@ always @ (posedge clk) begin
     if(rst || vsync) begin
         addr_reg <= 0;
     end
-    else if(addr_reg == width_reg) begin
+    else if(addr_reg == width_reg || hsync) begin
         addr_reg <= 0;
     end
     else begin
