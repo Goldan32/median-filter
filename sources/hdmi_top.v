@@ -155,15 +155,15 @@ wire tx_dv, tx_hs, tx_vs;
 assign tx_dv    = rx_dv;
 assign tx_hs    = rx_hs;
 assign tx_vs    = rx_vs;
-assign tx_red   = rx_red;
+//assign tx_red   = rx_red;
 //assign tx_red = kernel_red[25*8-1:25*8-8];
-assign tx_green = rx_green;
+//assign tx_green = rx_green;
 //assign tx_green = kernel_green[25*8-1:25*8-8];
-assign tx_blue  = rx_blue;
+//assign tx_blue  = rx_blue;
 //assign tx_blue = kernel_blue[25*8-1:25*8-8];
-/*
+
 hdmi_buffer buffer(
-    .clk(clk),
+    .clk(clk100M),
     .rst(rst),
     .rx_red(rx_red),
     .rx_green(rx_green),
@@ -174,7 +174,7 @@ hdmi_buffer buffer(
     .kernel_red(kernel_red),
     .kernel_green(kernel_green),
     .kernel_blue(kernel_blue)
-);*/
+);
 
 hdmi_tx hdmi_tx_0(
    .tx_clk(rx_clk),
@@ -197,5 +197,33 @@ hdmi_tx hdmi_tx_0(
 );
 
 assign led_r = {pll_locked, 1'b0, rx_status};
+
+
+calculate_median #(
+    .ELEMENT_NUM(25),
+    .DATA_WIDTH(8)
+) median_red (
+    .clk(clk100M),
+    .pixels(kernel_red),
+    .median(tx_red)
+);
+
+calculate_median #(
+    .ELEMENT_NUM(25),
+    .DATA_WIDTH(8)
+) median_blue (
+    .clk(clk100M),
+    .pixels(kernel_blue),
+    .median(tx_blue)
+);
+
+calculate_median #(
+    .ELEMENT_NUM(25),
+    .DATA_WIDTH(8)
+) median_green (
+    .clk(clk100M),
+    .pixels(kernel_green),
+    .median(tx_green)
+);
 
 endmodule

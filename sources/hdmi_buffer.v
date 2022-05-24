@@ -52,10 +52,10 @@ module hdmi_buffer(
     begin
         pixel <= 0;
     end     
-    if(rx_dv)
-    begin
+    //if(rx_dv)
+    //begin
         pixel <= {rx_red,rx_green,rx_blue};
-    end
+    //end
          
  end
  
@@ -78,7 +78,7 @@ addr_module(
 wire [23:0] shr_dout [4:0][4:0];
 wire [23:0] bram_dout [3:0];
 wire data_valid;
-assign data_valid = rx_dv;
+assign data_valid = 1;//rx_dv;
 
 genvar k;
 generate
@@ -155,9 +155,9 @@ genvar jj, ii;
 generate
     for (jj = 0; jj < 5; jj = jj + 1) begin
         for (ii = 0; ii < 5; ii = ii + 1) begin
-            assign kernel_red  [(5*jj+ii)*8 + 7: (5*jj+ii)*8] = shr_dout[jj][ii][7:0];
-            assign kernel_green[(5*jj+ii)*8 + 7: (5*jj+ii)*8] = shr_dout[jj][ii][15:8];
-            assign kernel_blue [(5*jj+ii)*8 + 7: (5*jj+ii)*8] = shr_dout[jj][ii][23:16];
+            assign kernel_red  [(5*jj+ii)*8 + 7: (5*jj+ii)*8] = shr_dout[jj][ii][23:16];
+            assign kernel_green[(5*jj+ii)*8 + 7: (5*jj+ii)*8] = shr_dout[jj][ii][15:8]; 
+            assign kernel_blue [(5*jj+ii)*8 + 7: (5*jj+ii)*8] = shr_dout[jj][ii][7:0];
         end
     end
 endgenerate
