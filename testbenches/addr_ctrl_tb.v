@@ -33,15 +33,15 @@ reg rst = 1;
 
 initial begin
 #22 rst <= 0;
-#100 rx_hs <= 1;
+#50 rx_hs <= 1;
 #10 rx_hs <= 0;
-#100 rx_hs <= 1;
+#50 rx_hs <= 1;
 #10 rx_hs <= 0;
-#100 rx_hs <= 1;
+#50 rx_hs <= 1;
 #10 rx_hs <= 0;
-#100 rx_hs <= 1;
+#50 rx_hs <= 1;
 #10 rx_hs <= 0;
-#100 rx_vs <= 1;
+#50 rx_vs <= 1;
 #10 rx_vs <= 0;
 end
 
