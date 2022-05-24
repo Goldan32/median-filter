@@ -33,7 +33,8 @@ module hdmi_buffer(
     
     output [25*8-1:0] kernel_red,
     output [25*8-1:0] kernel_green,
-    output [25*8-1:0] kernel_blue
+    output [25*8-1:0] kernel_blue,
+    output [25*3-1:0] kernel_etc
     );
     
  // 1. HSync alapj�n felbont�st mond  ---- K�sz, addr ez alapj�n van.
@@ -44,7 +45,7 @@ module hdmi_buffer(
  // 6. K�p sz�l�n�l az elej�re ugr�s, vagy belepr�sel?dik. 
  
  // Get one pixel from RX
- reg [23:0] pixel;
+ reg [26:0] pixel;
  
  always @ (posedge clk)
  begin
@@ -52,10 +53,7 @@ module hdmi_buffer(
     begin
         pixel <= 0;
     end     
-    //if(rx_dv)
-    //begin
-        pixel <= {rx_red,rx_green,rx_blue};
-    //end
+        pixel <= {rx_vs, rx_hs, rx_dv, rx_red,rx_green,rx_blue};
          
  end
  
@@ -75,8 +73,8 @@ addr_module(
     .width(width)
  );
 
-wire [23:0] shr_dout [4:0][4:0];
-wire [23:0] bram_dout [3:0];
+wire [26:0] shr_dout [4:0][4:0];
+wire [26:0] bram_dout [3:0];
 wire data_valid;
 assign data_valid = 1;//rx_dv;
 
@@ -115,7 +113,7 @@ generate
     for (q = 0; q < 4; q = q + 1) begin
     if(q==0) begin: inst
         bram#(
-            .DATA_W(24),
+            .DATA_W(27),
             .ADDR_W(11)
         )bram_module(
             .clk_a(clk),
@@ -155,6 +153,7 @@ genvar jj, ii;
 generate
     for (jj = 0; jj < 5; jj = jj + 1) begin
         for (ii = 0; ii < 5; ii = ii + 1) begin
+            assign kernel_etc  [(5*jj+ii)*3 + 2: (5*jj+ii)*3] = shr_dout[jj][ii][26:17];
             assign kernel_red  [(5*jj+ii)*8 + 7: (5*jj+ii)*8] = shr_dout[jj][ii][23:16];
             assign kernel_green[(5*jj+ii)*8 + 7: (5*jj+ii)*8] = shr_dout[jj][ii][15:8]; 
             assign kernel_blue [(5*jj+ii)*8 + 7: (5*jj+ii)*8] = shr_dout[jj][ii][7:0];

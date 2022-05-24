@@ -146,6 +146,7 @@ hdmi_rx hdmi_rx_0(
 wire [25*8-1:0] kernel_red;
 wire [25*8-1:0] kernel_green;
 wire [25*8-1:0] kernel_blue;
+wire [25*3-1:0] kernel_etc;
 
 // Loopback
 
@@ -173,7 +174,8 @@ hdmi_buffer buffer(
     .rx_vs(rx_vs),
     .kernel_red(kernel_red),
     .kernel_green(kernel_green),
-    .kernel_blue(kernel_blue)
+    .kernel_blue(kernel_blue),
+    .kernel_etc(kernel_etc)
 );
 
 hdmi_tx hdmi_tx_0(
