@@ -45,7 +45,9 @@ module hdmi_buffer(
  // 6. K�p sz�l�n�l az elej�re ugr�s, vagy belepr�sel?dik. 
  
  // Get one pixel from RX
- reg [26:0] pixel;
+ localparam ADDR_W = 11;
+ localparam DATA_W = 27;
+ reg [DATA_W-1:0] pixel;
  
  always @ (posedge clk)
  begin
@@ -58,11 +60,11 @@ module hdmi_buffer(
  end
  
 
-wire [10:0] addr;
-wire [10:0] width;
+wire [ADDR_W-1:0] addr;
+wire [ADDR_W-1:0] width;
  
 addr_ctrl #(
-    .ADDR_W(11)
+    .ADDR_W(ADDR_W)
 )
 addr_module(
     .clk(clk),
@@ -73,8 +75,8 @@ addr_module(
     .width(width)
  );
 
-wire [26:0] shr_dout [4:0][4:0];
-wire [26:0] bram_dout [3:0];
+wire [DATA_W-1:0] shr_dout [4:0][4:0];
+wire [DATA_W-1:0] bram_dout [3:0];
 wire data_valid;
 assign data_valid = 1;//rx_dv;
 
@@ -113,8 +115,8 @@ generate
     for (q = 0; q < 4; q = q + 1) begin
     if(q==0) begin: inst
         bram#(
-            .DATA_W(27),
-            .ADDR_W(11)
+            .DATA_W(DATA_W),
+            .ADDR_W(ADDR_W)
         )bram_module(
             .clk_a(clk),
             .we_a(data_valid != 0),
@@ -130,8 +132,8 @@ generate
     end
     else begin: inst
         bram#(
-            .DATA_W(27),
-            .ADDR_W(11)
+            .DATA_W(DATA_W),
+            .ADDR_W(ADDR_W)
         )bram_module(
             .clk_a(clk),
             .we_a((data_valid != 0)),

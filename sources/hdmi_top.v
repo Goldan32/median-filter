@@ -153,7 +153,7 @@ wire [25*3-1:0] kernel_etc;
 // Replace with image processing block
 wire [7:0] tx_red, tx_green, tx_blue;
 wire tx_dv, tx_hs, tx_vs;
-assign tx_dv    = rx_dv;
+//assign tx_dv    = rx_dv;
 //assign tx_hs    = rx_hs;
 //assign tx_vs    = rx_vs;
 //assign tx_red   = rx_red;
@@ -234,8 +234,8 @@ median_delay median_delay_module(
     .vs_in(kernel_etc[12*3+2]),
     .dv_in(kernel_etc[12*3+0]),
     .vs_out(tx_vs),
-    .hs_out(tx_hs)//,
-    //.dv_out(tx_dv)
+    .hs_out(tx_hs),
+    .dv_out(tx_dv)
     );
     
 endmodule
