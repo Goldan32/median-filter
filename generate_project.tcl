@@ -37,7 +37,6 @@
 #    "/home/goldan/logikai_tervezes/hf/fix/median-filter/sources/hdmi_tx.v"
 #    "/home/goldan/logikai_tervezes/hf/fix/median-filter/sources/px_shr.v"
 #    "/home/goldan/logikai_tervezes/hf/fix/median-filter/sources/hdmi_top.v"
-#    "/home/goldan/logikai_tervezes/hf/fix/median-filter/sources/median_delay.v"
 #    "/home/goldan/logikai_tervezes/hf/fix/median-filter/constraints/hdmi_top.xdc"
 #    "/home/goldan/logikai_tervezes/hf/fix/median-filter/testbenches/calculate_median_tb.v"
 #    "/home/goldan/logikai_tervezes/hf/fix/median-filter/testbenches/bram_tb.v"
@@ -50,7 +49,7 @@
 proc checkRequiredFiles { origin_dir} {
   set status true
   set files [list \
- "[file normalize "$origin_dir/project_1/project_1.srcs/utils_1/imports/synth_1/hdmi_top.dcp"]"\
+ ""\
   ]
   foreach ifile $files {
     if { ![file isfile $ifile] } {
@@ -70,7 +69,6 @@ proc checkRequiredFiles { origin_dir} {
  "[file normalize "$origin_dir/sources/hdmi_tx.v"]"\
  "[file normalize "$origin_dir/sources/px_shr.v"]"\
  "[file normalize "$origin_dir/sources/hdmi_top.v"]"\
- "[file normalize "$origin_dir/sources/median_delay.v"]"\
  "[file normalize "$origin_dir/constraints/hdmi_top.xdc"]"\
  "[file normalize "$origin_dir/testbenches/calculate_median_tb.v"]"\
  "[file normalize "$origin_dir/testbenches/bram_tb.v"]"\
@@ -229,7 +227,6 @@ set files [list \
  [file normalize "${origin_dir}/sources/hdmi_tx.v"] \
  [file normalize "${origin_dir}/sources/px_shr.v"] \
  [file normalize "${origin_dir}/sources/hdmi_top.v"] \
- [file normalize "${origin_dir}/sources/median_delay.v"] \
 ]
 add_files -norecurse -fileset $obj $files
 
@@ -303,19 +300,9 @@ set_property -name "top_lib" -value "xil_defaultlib" -objects $obj
 # Set 'utils_1' fileset object
 set obj [get_filesets utils_1]
 # Import local files from the original project
-set files [list \
- [file normalize "${origin_dir}/project_1/project_1.srcs/utils_1/imports/synth_1/hdmi_top.dcp" ]\
-]
-set imported_files [import_files -fileset utils_1 $files]
 
 # Set 'utils_1' fileset file properties for remote files
 # None
-
-# Set 'utils_1' fileset file properties for local files
-set file "synth_1/hdmi_top.dcp"
-set file_obj [get_files -of_objects [get_filesets utils_1] [list "*$file"]]
-set_property -name "netlist_only" -value "0" -objects $file_obj
-
 
 # Set 'utils_1' fileset properties
 set obj [get_filesets utils_1]
@@ -345,11 +332,6 @@ set obj [get_report_configs -of_objects [get_runs synth_1] synth_1_synth_report_
 if { $obj != "" } {
 
 }
-set obj [get_runs synth_1]
-set_property -name "part" -value "xc7k70tfbg676-1" -objects $obj
-set_property -name "incremental_checkpoint" -value "$proj_dir/project_1.srcs/utils_1/imports/synth_1/hdmi_top.dcp" -objects $obj
-set_property -name "auto_incremental_checkpoint" -value "1" -objects $obj
-set_property -name "strategy" -value "Vivado Synthesis Defaults" -objects $obj
 
 # set the current synth run
 current_run -synthesis [get_runs synth_1]
