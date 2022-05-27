@@ -31,32 +31,26 @@ module hdmi_buffer(
     input       rx_hs,
     input       rx_vs,
     
+    output      tx_dv,
+    output      tx_hs,
+    output      tx_vs,
     output [25*8-1:0] kernel_red,
     output [25*8-1:0] kernel_green,
     output [25*8-1:0] kernel_blue
     );
-    
- // 1. HSync alapj�n felbont�st mond  ---- K�sz, addr ez alapj�n van.
- // 2. Sz�ml�l�, ami megmondja, hogy mikor van az �sszes bramban adat. ----- Kernel valid. Ha 4x eljutottunk ak�p sz�l�re, azt jelenti, hogy van 4 sor + 5 pixel
- // 3. VSync alapj�n megmondja, hogy h�ny sor van. ----- Ez lehet felesleges. Ha vsync j�n, azt jelenti, hogy v�ge a k�pnek. Ekkor a valid jeleket null�zni kell. K�rd�s, hogy az ablak t�bbi r�sz�vel mi legyen.
- // 4. Address-t sz�mol. ---- Ez k�sz. Most a READ �s WRITE addr megegyezik, rem�lhet?leg nem akadnak �ssze. (�sszeakadhatnak?)
- // 5. Bramok egym�sba t�lt�getik egym�st. ---- Ez szerintem k�sz, shift regisztereken kereszt�l megy bel�j�k az adat.
- // 6. K�p sz�l�n�l az elej�re ugr�s, vagy belepr�sel?dik. 
+
  
  // Get one pixel from RX
- reg [23:0] pixel;
+ reg [26:0] pixel;
  
  always @ (posedge clk)
  begin
-    if(rst || rx_vs)
+    if(rst) // || rx_vs
     begin
         pixel <= 0;
-    end     
-    //if(rx_dv)
-    //begin
-        pixel <= {rx_red,rx_green,rx_blue};
-    //end
-         
+    end else begin
+        pixel <= {rx_dv, rx_vs, rx_hs, rx_red,rx_green,rx_blue};
+    end
  end
  
 
@@ -75,16 +69,16 @@ addr_module(
     .width(width)
  );
 
-wire [23:0] shr_dout [4:0][4:0];
-wire [23:0] bram_dout [3:0];
+wire [26:0] shr_dout [4:0][4:0];
+wire [26:0] bram_dout [3:0];
 wire data_valid;
 assign data_valid = 1;//rx_dv;
 
 genvar k;
 generate
-    for (k = 0; k < 5; k = k + 1) begin: inst
+    for (k = 0; k < 5; k = k + 1) begin: inst_shr
     if(k==0) begin
-        px_shr(
+        px_shr#(.DATA_W(27))shr(
             .clk(clk),
             .rst(rst),
             .din(pixel),
@@ -96,7 +90,7 @@ generate
         );
     end
     else begin
-        px_shr(
+        px_shr#(.DATA_W(27))shr(
             .clk(clk),
             .rst(rst),
             .din(bram_dout[k-1]),
@@ -115,11 +109,11 @@ generate
     for (q = 0; q < 4; q = q + 1) begin
     if(q==0) begin: inst
         bram#(
-            .DATA_W(24),
+            .DATA_W(27),
             .ADDR_W(11)
         )bram_module(
             .clk_a(clk),
-            .we_a(data_valid != 0),
+            .we_a(1'b1),
             .addr_a(addr),
             .din_a(pixel),
             .dout_a(),
@@ -132,13 +126,13 @@ generate
     end
     else begin: inst
         bram#(
-            .DATA_W(24),
+            .DATA_W(27),
             .ADDR_W(11)
         )bram_module(
             .clk_a(clk),
-            .we_a((data_valid != 0)),
+            .we_a(1'b1),
             .addr_a(addr),
-            .din_a(shr_dout[q][0]),
+            .din_a(bram_dout[q-1]),
             .dout_a(),
             .clk_b(clk),
             .we_b(1'b0),
@@ -150,6 +144,9 @@ generate
     end
 endgenerate
 
+assign tx_hs = shr_dout[2][2][24];
+assign tx_vs = shr_dout[2][2][25];
+assign tx_dv = shr_dout[2][2][26];
 
 genvar jj, ii;
 generate

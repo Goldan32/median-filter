@@ -152,15 +152,17 @@ wire [25*8-1:0] kernel_blue;
 // Replace with image processing block
 wire [7:0] tx_red, tx_green, tx_blue;
 wire tx_dv, tx_hs, tx_vs;
-assign tx_dv    = rx_dv;
-assign tx_hs    = rx_hs;
-assign tx_vs    = rx_vs;
+//assign tx_dv    = rx_dv;
+//assign tx_hs    = rx_hs;
+//assign tx_vs    = rx_vs;
 //assign tx_red   = rx_red;
 //assign tx_red = kernel_red[25*8-1:25*8-8];
 //assign tx_green = rx_green;
 //assign tx_green = kernel_green[25*8-1:25*8-8];
 //assign tx_blue  = rx_blue;
 //assign tx_blue = kernel_blue[25*8-1:25*8-8];
+
+wire vs_delay, hs_delay, dv_delay;
 
 hdmi_buffer buffer(
     .clk(clk100M),
@@ -171,10 +173,27 @@ hdmi_buffer buffer(
     .rx_dv(rx_dv),
     .rx_hs(rx_hs),
     .rx_vs(rx_vs),
+
+    .tx_dv(dv_delay),
+    .tx_hs(hs_delay),
+    .tx_vs(vs_delay),
     .kernel_red(kernel_red),
     .kernel_green(kernel_green),
     .kernel_blue(kernel_blue)
 );
+
+reg [15:0] vs_reg;
+reg [15:0] hs_reg;
+reg [15:0] dv_reg;
+always @ (posedge clk100M) begin
+    vs_reg <= {vs_reg[14:0], vs_delay};
+    hs_reg <= {hs_reg[14:0], hs_delay};
+    dv_reg <= {dv_reg[14:0], dv_delay};
+end
+
+assign tx_dv = dv_reg[15];
+assign tx_vs = vs_reg[15];
+assign tx_hs = hs_reg[15];
 
 hdmi_tx hdmi_tx_0(
    .tx_clk(rx_clk),

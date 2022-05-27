@@ -57,7 +57,7 @@ always @ (posedge clk) begin
     if(rst || vsync) begin
         addr_reg <= 0;
     end
-    else if(addr_reg == width_reg || hsync) begin
+    else if((addr_reg == width_reg)|| hsync) begin
         addr_reg <= 0;
     end
     else begin
