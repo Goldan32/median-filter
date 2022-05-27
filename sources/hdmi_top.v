@@ -148,12 +148,24 @@ hdmi_rx hdmi_rx_0(
 // Replace with image processing block
 wire [7:0] tx_red, tx_green, tx_blue;
 wire tx_dv, tx_hs, tx_vs;
-assign tx_dv    = rx_dv;
-assign tx_hs    = rx_hs;
-assign tx_vs    = rx_vs;
-assign tx_red   = rx_red;
-assign tx_green = rx_green;
-assign tx_blue  = rx_blue;
+
+hdmi_buffer hdmi_buffer_module(
+    .clk(clk100M),
+    .rst(rst),
+    .rx_red(rx_red),
+    .rx_green(rx_green),
+    .rx_blue(rx_blue),
+    .rx_hs(rx_hs),
+    .rx_vs(rx_vs),
+    .rx_dv(rx_dv),
+
+    .tx_red(tx_red),
+    .tx_green(tx_green),
+    .tx_blue(tx_blue),
+    .tx_hs(tx_hs),
+    .tx_vs(tx_vs),
+    .tx_dv(tx_dv)
+);
  
 
 hdmi_tx hdmi_tx_0(
