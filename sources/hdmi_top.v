@@ -166,7 +166,6 @@ hdmi_buffer hdmi_buffer_module(
     .tx_vs(tx_vs),
     .tx_dv(tx_dv)
 );
- 
 
 hdmi_tx hdmi_tx_0(
    .tx_clk(rx_clk),

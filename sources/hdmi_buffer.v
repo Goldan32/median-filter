@@ -72,7 +72,7 @@ generate
             bram #(
                 .DATA_W(27),
                 .ADDR_W(11)
-            )(
+            )bram_module(
                 .clk(clk),
                 .we(1),
                 .din(pixel),
@@ -83,7 +83,7 @@ generate
             bram #(
                 .DATA_W(27),
                 .ADDR_W(11)
-            )(
+            )bram_module(
                 .clk(clk),
                 .we(1),
                 .din(bram_dout[q-1]),
@@ -180,7 +180,7 @@ calculate_median #(
 ) median_blue (
     .clk(clk),
     .pixels(kernel_green),
-    .median(tx_blue)
+    .median(tx_green)
 );
 
 calculate_median #(
@@ -199,7 +199,7 @@ assign control = shr_dout[2][2][26:24];
 line_delay #(
     .DATA_W(3),
     .DELAY(16)
-)(
+)final_delay(
     .clk(clk),
     .value_in(control),
     .value_out(control_delay)
