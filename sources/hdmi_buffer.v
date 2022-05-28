@@ -36,49 +36,42 @@ module hdmi_buffer(
     output [25*8-1:0] kernel_blue
     );
     
- // 1. HSync alapj�n felbont�st mond  ---- K�sz, addr ez alapj�n van.
- // 2. Sz�ml�l�, ami megmondja, hogy mikor van az �sszes bramban adat. ----- Kernel valid. Ha 4x eljutottunk ak�p sz�l�re, azt jelenti, hogy van 4 sor + 5 pixel
- // 3. VSync alapj�n megmondja, hogy h�ny sor van. ----- Ez lehet felesleges. Ha vsync j�n, azt jelenti, hogy v�ge a k�pnek. Ekkor a valid jeleket null�zni kell. K�rd�s, hogy az ablak t�bbi r�sz�vel mi legyen.
- // 4. Address-t sz�mol. ---- Ez k�sz. Most a READ �s WRITE addr megegyezik, rem�lhet?leg nem akadnak �ssze. (�sszeakadhatnak?)
- // 5. Bramok egym�sba t�lt�getik egym�st. ---- Ez szerintem k�sz, shift regisztereken kereszt�l megy bel�j�k az adat.
- // 6. K�p sz�l�n�l az elej�re ugr�s, vagy belepr�sel?dik. 
+    localparam ADDR_W = 11;
+    localparam DATA_W = 24;
  
  // Get one pixel from RX
- reg [23:0] pixel;
- 
- always @ (posedge clk)
- begin
-    if(rst || rx_vs)
-    begin
-        pixel <= 0;
-    end     
-    //if(rx_dv)
-    //begin
-        pixel <= {rx_red,rx_green,rx_blue};
-    //end
-         
- end
- 
+ wire [DATA_W - 1:0] pixel;
+ assign pixel = rx_dv ? {rx_red, rx_green, rx_blue} : 24'd0;
 
-wire [10:0] addr;
-wire [10:0] width;
+// Delay the HDMI signals
+ reg [1:0] hsync_dly;
+ reg [1:0] vsync_dly;
+ reg [1:0] dv_dly;
+ 
+ always @ (posedge clk) begin
+    hsync_dly <= {hsync_dly[1:0], rx_hs};
+    vsync_dly <= {vsync_dly[1:0], rx_vs};
+    dv_dly    <= {dv_dly[1:0], rx_dv};
+ end
+
+// Detect rising hsync edge
+wire hsync_rise;
+assign hsync_rise = (~hsync_dly[0] && rx_hs);
+
+wire [ADDR_W - 1:0] addr;
  
 addr_ctrl #(
-    .ADDR_W(11)
+    .ADDR_W(ADDR_W)
 )
 addr_module(
     .clk(clk),
     .rst(rst),
-    .vsync(rx_vs),
-    .hsync(rx_hs),
-    .addr(addr),
-    .width(width)
+    .hsync(hsync_rise),
+    .addr(addr)
  );
 
-wire [23:0] shr_dout [4:0][4:0];
-wire [23:0] bram_dout [3:0];
-wire data_valid;
-assign data_valid = 1;//rx_dv;
+wire [DATA_W - 1:0] shr_dout [4:0][4:0];
+wire [DATA_W - 1:0] bram_dout [3:0];
 
 genvar k;
 generate
@@ -115,11 +108,11 @@ generate
     for (q = 0; q < 4; q = q + 1) begin
     if(q==0) begin: inst
         bram#(
-            .DATA_W(24),
-            .ADDR_W(11)
+            .DATA_W(DATA_W - 1),
+            .ADDR_W(ADDR_W - 1)
         )bram_module(
             .clk_a(clk),
-            .we_a(data_valid != 0),
+            .we_a(1'b1),
             .addr_a(addr),
             .din_a(pixel),
             .dout_a(),
@@ -132,11 +125,11 @@ generate
     end
     else begin: inst
         bram#(
-            .DATA_W(24),
-            .ADDR_W(11)
+            .DATA_W(DATA_W - 1),
+            .ADDR_W(ADDR_W - 1)
         )bram_module(
             .clk_a(clk),
-            .we_a((data_valid != 0)),
+            .we_a(1'b1),
             .addr_a(addr),
             .din_a(shr_dout[q][0]),
             .dout_a(),
