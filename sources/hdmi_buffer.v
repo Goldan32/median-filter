@@ -31,17 +31,20 @@ module hdmi_buffer(
     input       rx_hs,
     input       rx_vs,
     
+    output      tx_dv,
+    output      tx_hs,
+    output      tx_vs,
     output [25*8-1:0] kernel_red,
     output [25*8-1:0] kernel_green,
     output [25*8-1:0] kernel_blue
     );
     
     localparam ADDR_W = 11;
-    localparam DATA_W = 24;
+    localparam DATA_W = 27;
  
  // Get one pixel from RX
  wire [DATA_W - 1:0] pixel;
- assign pixel = rx_dv ? {rx_red, rx_green, rx_blue} : 24'd0;
+ assign pixel = rx_dv ? {rx_dv, rx_hs, rx_vs, rx_red, rx_green, rx_blue} : 27'd0;
 
 // Delay the HDMI signals
  reg [1:0] hsync_dly;
@@ -58,7 +61,8 @@ module hdmi_buffer(
 wire hsync_rise;
 assign hsync_rise = (~hsync_dly[1] && rx_hs);
 
-wire [ADDR_W - 1:0] addr;
+wire [ADDR_W - 1:0] rd_addr;
+wire [ADDR_W - 1:0] wr_addr;
  
 addr_ctrl #(
     .ADDR_W(ADDR_W)
@@ -66,7 +70,8 @@ addr_ctrl #(
 addr_module(
     .clk(clk),
     .hsync(hsync_rise),
-    .addr(addr)
+    .rd_addr(rd_addr),
+    .wr_addr(wr_addr)
  );
 
 wire [DATA_W - 1:0] shr_dout [4:0][4:0];
@@ -110,16 +115,12 @@ generate
             .DATA_W(DATA_W),
             .ADDR_W(ADDR_W)
         )bram_module(
-            .clk_a(clk),
-            .we_a(1'b1),
-            .addr_a(addr),
-            .din_a(pixel),
-            .dout_a(),
-            .clk_b(clk),
-            .we_b(1'b0),
-            .addr_b(addr),
-            .din_b(),
-            .dout_b(bram_dout[q])
+            .clk(clk),
+            .we(1'b1),
+            .rd_addr(rd_addr),
+            .wr_addr(wr_addr),
+            .din(pixel),
+            .dout(bram_dout[q])
         );
     end
     else begin: inst
@@ -127,21 +128,20 @@ generate
             .DATA_W(DATA_W),
             .ADDR_W(ADDR_W)
         )bram_module(
-            .clk_a(clk),
-            .we_a(1'b1),
-            .addr_a(addr),
-            .din_a(shr_dout[q][0]),
-            .dout_a(),
-            .clk_b(clk),
-            .we_b(1'b0),
-            .addr_b(addr),
-            .din_b(),
-            .dout_b(bram_dout[q])
+            .clk(clk),
+            .we(1'b1),
+            .rd_addr(rd_addr),
+            .wr_addr(wr_addr),
+            .din(shr_dout[q][0]),
+            .dout(bram_dout[q])
         );
     end
     end
 endgenerate
 
+assign tx_dv = shr_dout[2][2][26];
+assign tx_hs = shr_dout[2][2][25];
+assign tx_vs = shr_dout[2][2][24];
 
 genvar jj, ii;
 generate

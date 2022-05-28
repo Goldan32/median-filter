@@ -152,9 +152,9 @@ wire [25*8-1:0] kernel_blue;
 // Replace with image processing block
 wire [7:0] tx_red, tx_green, tx_blue;
 wire tx_dv, tx_hs, tx_vs;
-assign tx_dv    = rx_dv;
-assign tx_hs    = rx_hs;
-assign tx_vs    = rx_vs;
+//assign tx_dv    = rx_dv;
+//assign tx_hs    = rx_hs;
+//assign tx_vs    = rx_vs;
 //assign tx_red   = rx_red;
 //assign tx_red = kernel_red[25*8-1:25*8-8];
 //assign tx_green = rx_green;
@@ -171,6 +171,9 @@ hdmi_buffer buffer(
     .rx_dv(rx_dv),
     .rx_hs(rx_hs),
     .rx_vs(rx_vs),
+    .tx_dv(tx_dv),
+    .tx_hs(tx_hs),
+    .tx_vs(tx_vs),
     .kernel_red(kernel_red),
     .kernel_green(kernel_green),
     .kernel_blue(kernel_blue)

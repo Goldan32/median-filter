@@ -25,20 +25,26 @@ module addr_ctrl#(
 )(
     input clk,
     input hsync,
-    output [ADDR_W-1:0] addr
+    output [ADDR_W - 1:0] rd_addr,
+    output [ADDR_W - 1:0] wr_addr
     );
 
 // Address counter    
-reg [ADDR_W-1:0] addr_reg;
+reg [ADDR_W-1:0] rd_addr_reg;
+reg [ADDR_W-1:0] wr_addr_reg;
+always @ (posedge clk) begin
+    wr_addr_reg <= rd_addr_reg; 
+end
 
 always @ (posedge clk) begin
     if(hsync) begin
-        addr_reg <= 0;
+        rd_addr_reg <= 0;
     end else begin
-        addr_reg <= addr_reg + 1;
+        rd_addr_reg <= rd_addr_reg + 1;
     end
 end
 
-assign addr = addr_reg;
+assign rd_addr = rd_addr_reg;
+assign wr_addr = wr_addr_reg;
 
 endmodule
