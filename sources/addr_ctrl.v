@@ -24,7 +24,6 @@ module addr_ctrl#(
     parameter ADDR_W = 11
 )(
     input clk,
-    input rst,
     input hsync,
     output [ADDR_W-1:0] addr
     );
@@ -33,7 +32,7 @@ module addr_ctrl#(
 reg [ADDR_W-1:0] addr_reg;
 
 always @ (posedge clk) begin
-    if(rst | hsync) begin
+    if(hsync) begin
         addr_reg <= 0;
     end else begin
         addr_reg <= addr_reg + 1;

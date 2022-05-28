@@ -56,7 +56,7 @@ module hdmi_buffer(
 
 // Detect rising hsync edge
 wire hsync_rise;
-assign hsync_rise = (~hsync_dly[0] && rx_hs);
+assign hsync_rise = (~hsync_dly[1] && rx_hs);
 
 wire [ADDR_W - 1:0] addr;
  
@@ -65,7 +65,6 @@ addr_ctrl #(
 )
 addr_module(
     .clk(clk),
-    .rst(rst),
     .hsync(hsync_rise),
     .addr(addr)
  );
@@ -106,10 +105,10 @@ endgenerate
 genvar q;
 generate
     for (q = 0; q < 4; q = q + 1) begin
-    if(q==0) begin: inst
+    if(q==0) begin: inst 
         bram#(
-            .DATA_W(DATA_W - 1),
-            .ADDR_W(ADDR_W - 1)
+            .DATA_W(DATA_W),
+            .ADDR_W(ADDR_W)
         )bram_module(
             .clk_a(clk),
             .we_a(1'b1),
@@ -125,8 +124,8 @@ generate
     end
     else begin: inst
         bram#(
-            .DATA_W(DATA_W - 1),
-            .ADDR_W(ADDR_W - 1)
+            .DATA_W(DATA_W),
+            .ADDR_W(ADDR_W)
         )bram_module(
             .clk_a(clk),
             .we_a(1'b1),
