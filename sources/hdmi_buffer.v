@@ -39,7 +39,7 @@ module hdmi_buffer(
     output [25*8-1:0] kernel_blue
     );
     
-    localparam ADDR_W = 11;
+    localparam ADDR_W = 12;
     localparam DATA_W = 27;
  
  // Get one pixel from RX
@@ -81,7 +81,9 @@ genvar k;
 generate
     for (k = 0; k < 5; k = k + 1) begin: inst
     if(k==0) begin
-        px_shr(
+        px_shr#(
+            .DATA_W(DATA_W)
+            )shr(
             .clk(clk),
             .rst(rst),
             .din(pixel),
@@ -93,7 +95,9 @@ generate
         );
     end
     else begin
-        px_shr(
+        px_shr#(
+            .DATA_W(DATA_W)
+            )shr(
             .clk(clk),
             .rst(rst),
             .din(bram_dout[k-1]),

@@ -20,22 +20,24 @@
 //////////////////////////////////////////////////////////////////////////////////
 
 
-module px_shr(
-    input wire [23:0] din,
+module px_shr#(
+parameter DATA_W = 24
+)(
+    input wire [DATA_W - 1:0] din,
     input clk,
     input rst,
-    output wire [23:0] data0,
-    output wire [23:0] data1,
-    output wire [23:0] data2,
-    output wire [23:0] data3,
-    output wire [23:0] data4
+    output wire [DATA_W - 1:0] data0,
+    output wire [DATA_W - 1:0] data1,
+    output wire [DATA_W - 1:0] data2,
+    output wire [DATA_W - 1:0] data3,
+    output wire [DATA_W - 1:0] data4
     );
 
-reg [23:0] data_reg [4:0];
+reg [DATA_W - 1:0] data_reg [4:0];
 
 always @ (posedge clk) begin
     if (rst) begin
-        data_reg[4] <= 24'd0;
+        data_reg[4] <= 0;
     end else begin
         data_reg[4] <= din;
     end
@@ -46,7 +48,7 @@ generate
     for (i = 0; i < 4; i = i + 1) begin
         always @ (posedge clk) begin
             if (rst) begin
-                data_reg[i] <= 24'd0;
+                data_reg[i] <= 0;
             end else begin
                 data_reg[i] <= data_reg[i+1];
             end

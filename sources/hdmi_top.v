@@ -152,9 +152,9 @@ wire [25*8-1:0] kernel_blue;
 // Replace with image processing block
 wire [7:0] tx_red, tx_green, tx_blue;
 wire tx_dv, tx_hs, tx_vs;
-//assign tx_dv    = rx_dv;
-//assign tx_hs    = rx_hs;
-//assign tx_vs    = rx_vs;
+assign tx_dv    = rx_dv;
+assign tx_hs    = rx_hs;
+assign tx_vs    = rx_vs;
 //assign tx_red   = rx_red;
 //assign tx_red = kernel_red[25*8-1:25*8-8];
 //assign tx_green = rx_green;
@@ -163,7 +163,7 @@ wire tx_dv, tx_hs, tx_vs;
 //assign tx_blue = kernel_blue[25*8-1:25*8-8];
 
 hdmi_buffer buffer(
-    .clk(clk100M),
+    .clk(rx_clk),
     .rst(rst),
     .rx_red(rx_red),
     .rx_green(rx_green),
@@ -171,9 +171,9 @@ hdmi_buffer buffer(
     .rx_dv(rx_dv),
     .rx_hs(rx_hs),
     .rx_vs(rx_vs),
-    .tx_dv(tx_dv),
-    .tx_hs(tx_hs),
-    .tx_vs(tx_vs),
+    .tx_dv(),
+    .tx_hs(),
+    .tx_vs(),
     .kernel_red(kernel_red),
     .kernel_green(kernel_green),
     .kernel_blue(kernel_blue)
@@ -206,7 +206,7 @@ calculate_median #(
     .ELEMENT_NUM(25),
     .DATA_WIDTH(8)
 ) median_red (
-    .clk(clk100M),
+    .clk(rx_clk),
     .pixels(kernel_red),
     .median(tx_red)
 );
@@ -215,7 +215,7 @@ calculate_median #(
     .ELEMENT_NUM(25),
     .DATA_WIDTH(8)
 ) median_blue (
-    .clk(clk100M),
+    .clk(rx_clk),
     .pixels(kernel_blue),
     .median(tx_blue)
 );
@@ -224,7 +224,7 @@ calculate_median #(
     .ELEMENT_NUM(25),
     .DATA_WIDTH(8)
 ) median_green (
-    .clk(clk100M),
+    .clk(rx_clk),
     .pixels(kernel_green),
     .median(tx_green)
 );
