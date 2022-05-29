@@ -3,7 +3,7 @@
 
 module bram#(
     parameter DATA_W = 24,
-    parameter ADDR_W = 11
+    parameter ADDR_W = 12
 )(
     input               clk,
     input               we,
@@ -23,7 +23,7 @@ begin
    if (we) ram_array[addr] <= din;
    dout_reg <= ram_array[addr];
 end
-assign dout = dout_reg;
 
+assign dout = dout_reg;
 
 endmodule

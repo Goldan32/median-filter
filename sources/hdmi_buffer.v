@@ -58,7 +58,6 @@ addr_ctrl #(
 ) addr_module (
     .clk(clk),
     .rst(rst),
-    .vsync(rx_vs),
     .hsync(rx_hs),
     .addr(addr)
 );
@@ -94,45 +93,12 @@ generate
     end 
 endgenerate
 
-
-// Shiftregisters to make delayed pixel signals
-line_delay #(
-    .DATA_W(27),
-    .DELAY(4)
-)dl4(
-    .clk(clk),
-    .value_in(pixel),
-    .value_out(pixel_delay[0])
-);
-
-line_delay #(
-    .DATA_W(27),
-    .DELAY(3)
-)dl3(
-    .clk(clk),
-    .value_in(bram_dout[0]),
-    .value_out(pixel_delay[1])
-);
-
-line_delay #(
-    .DATA_W(27),
-    .DELAY(2)
-)dl2(
-    .clk(clk),
-    .value_in(bram_dout[1]),
-    .value_out(pixel_delay[2])
-);
-
-line_delay #(
-    .DATA_W(27),
-    .DELAY(1)
-)dl1(
-    .clk(clk),
-    .value_in(bram_dout[2]),
-    .value_out(pixel_delay[3])
-);
-
 assign pixel_delay[4] = bram_dout[3];
+assign pixel_delay[3] = bram_dout[2];
+assign pixel_delay[2] = bram_dout[1];
+assign pixel_delay[1] = bram_dout[0];
+assign pixel_delay[0] = pixel;
+
 
 //Instanciating px_shr to store the kernel
 genvar k;
@@ -205,10 +171,9 @@ line_delay #(
     .value_out(control_delay)
 );
 
-assign tx_hs = shr_dout[2][2][26];//control_delay[0];
-assign tx_vs = shr_dout[2][2][25];//control_delay[1];
-assign tx_dv = shr_dout[2][2][26];//control_delay[2];
-
+assign tx_hs = control_delay[0];
+assign tx_vs = control_delay[1];
+assign tx_dv = control_delay[2];
 
 
 endmodule

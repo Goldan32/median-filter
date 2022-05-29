@@ -150,7 +150,7 @@ wire [7:0] tx_red, tx_green, tx_blue;
 wire tx_dv, tx_hs, tx_vs;
 
 hdmi_buffer hdmi_buffer_module(
-    .clk(clk100M),
+    .clk(rx_clk),
     .rst(rst),
     .rx_red(rx_red),
     .rx_green(rx_green),
