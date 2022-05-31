@@ -93,11 +93,50 @@ generate
     end 
 endgenerate
 
-assign pixel_delay[4] = bram_dout[3];
-assign pixel_delay[3] = bram_dout[2];
-assign pixel_delay[2] = bram_dout[1];
-assign pixel_delay[1] = bram_dout[0];
-assign pixel_delay[0] = pixel;
+line_delay #(
+    .DATA_W(27),
+    .DELAY(5)
+) ld0 (
+    .clk(clk),
+    .value_in(pixel),
+    .value_out(pixel_delay[0])
+);
+
+line_delay #(
+    .DATA_W(27),
+    .DELAY(4)
+) ld1 (
+    .clk(clk),
+    .value_in(bram_dout[0]),
+    .value_out(pixel_delay[1])
+);
+
+line_delay #(
+    .DATA_W(27),
+    .DELAY(3)
+) ld2 (
+    .clk(clk),
+    .value_in(bram_dout[1]),
+    .value_out(pixel_delay[2])
+);
+
+line_delay #(
+    .DATA_W(27),
+    .DELAY(2)
+) ld3 (
+    .clk(clk),
+    .value_in(bram_dout[2]),
+    .value_out(pixel_delay[3])
+);
+
+line_delay #(
+    .DATA_W(27),
+    .DELAY(1)
+) ld4 (
+    .clk(clk),
+    .value_in(bram_dout[3]),
+    .value_out(pixel_delay[4])
+);
 
 
 //Instanciating px_shr to store the kernel
